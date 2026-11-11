@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Caderno de Vendas</title>
+
+  <style>
+    /* Cores tiradas do logo da Uninorte */
+    :root {
+      --azul: #1f3a9b;
+      --laranja: #e8672b;
+      --fundo: #f3f5fa;
+      --texto: #1d2433;
+      --cinza: #5c667a;
+      --borda: #d5dae6;
+      --verde: #1d7a46;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--fundo);
+      color: var(--texto);
+      line-height: 1.4;
+    }
+
+    header {
+      background: #fff;
+      border-bottom: 4px solid var(--laranja);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    header img { height: 52px; }
+    header h1 { margin: 0; font-size: 1.5rem; color: var(--azul); }
+    header p { margin: 0; font-size: 0.9rem; color: var(--cinza); }
+
+    main {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 0 16px;
+    }
+
+    /* Os três quadros com os totais */
+    .totais {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .caixa {
+      background: #fff;
+      border: 1px solid var(--borda);
+      border-radius: 6px;
+      padding: 14px 16px;
+    }
+    .caixa small { color: var(--cinza); font-size: 0.85rem; }
+    .caixa strong { display: block; font-size: 1.6rem; color: var(--azul); }
+    .caixa.principal { background: var(--azul); border-color: var(--azul); }
+    .caixa.principal small { color: #cfd8f5; }
+    .caixa.principal strong { color: #fff; font-size: 2.6rem; }
+    .caixa.recebido strong { color: var(--verde); }
+
+    .colunas {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    h2 {
+      margin: 0 0 12px 0;
+      font-size: 1.1rem;
+      color: var(--azul);
+    }
+
+    label { display: block; font-size: 0.85rem; margin: 10px 0 3px; font-weight: 600; }
+    input, select {
+      width: 100%;
+      padding: 9px;
+      font-size: 1rem;
+      border: 1px solid var(--borda);
+      border-radius: 4px;
+      background: #fff;
+      font-family: inherit;
+    }
+    input:focus, select:focus, button:focus-visible {
+      outline: 3px solid #f5b895;
+      border-color: var(--laranja);
+    }
+    .linha { display: flex; gap: 10px; }
+    .linha > div { flex: 1; }
+
+    .previa {
+      margin-top: 12px;
+      padding: 8px 10px;
+      background: var(--fundo);
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .botao-salvar {
+      width: 100%;
+      margin-top: 14px;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      background: var(--laranja);
+      border: none;
+      border-radius: 4px;
+    }
+    .botao-salvar:hover { background: #cf561d; }
+
+    .mensagem {
+      margin-top: 8px;
+      min-height: 1.2em;
+      font-size: 0.9rem;
+      color: var(--verde);
+    }
+    .mensagem.erro { color: #b3261e; }
+
+    /* Tabela de vendas */
+    .topo-lista {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .topo-lista input { width: auto; }
+
+    .rolagem { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    th {
+      text-align: left;
+      background: var(--fundo);
+      padding: 8px;
+      border-bottom: 2px solid var(--borda);
+      font-size: 0.85rem;
+    }
+    td { padding: 8px; border-bottom: 1px solid var(--borda); }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+
+    .etiqueta {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      background: #e3e8f7;
+      color: var(--azul);
+    }
+    .etiqueta.fiado { background: #fde6d8; color: #a8430f; }
+
+    .mini {
+      border: 1px solid var(--borda);
+      background: #fff;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 0.8rem;
+      margin-left: 4px;
+    }
+    .mini:hover { border-color: var(--laranja); }
+    .mini.apagar { color: #b3261e; }
+
+    .vazio {
+      padding: 24px 10px;
+      text-align: center;
+      color: var(--cinza);
+    }
+
+    /* Lista de produtos cadastrados */
+    .caixa.espaco { margin-top: 20px; }
+    .lista-produtos { list-style: none; margin: 14px 0 0; padding: 0; }
+    .lista-produtos li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--borda);
+      font-size: 0.95rem;
+    }
+    .lista-produtos small { color: var(--cinza); display: block; }
+    .botao-cadastrar {
+      width: 100%;
+      margin-top: 12px;
+      padding: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      background: var(--azul);
+      border: none;
+      border-radius: 4px;
+    }
+    .botao-cadastrar:hover { background: #172d78; }
+
+    .por-categoria { margin-top: 18px; }
+    .por-categoria ul { list-style: none; margin: 0; padding: 0; }
+    .por-categoria li {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--borda);
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--cinza);
+      padding: 20px 10px 30px;
+    }
+
+    @media (max-width: 800px) {
+      .totais { grid-template-columns: 1fr 1fr; }
+      .caixa.principal { grid-column: 1 / 3; }
+      .colunas { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      header img, form, .mini, .botao-salvar { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <img src="logo.png" alt="Logo da Uninorte">
+    <div>
+      <h1>Caderno de Vendas</h1>
+      <p>Anote o que você vendeu e veja quanto entrou no dia</p>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Totais do dia escolhido -->
+    <section class="totais">
+      <div class="caixa principal">
+        <small>Total vendido no dia</small>
+        <strong id="totalDia">R$ 0,00</strong>
+      </div>
+      <div class="caixa recebido">
+        <small>Já entrou (dinheiro e Pix)</small>
+        <strong id="totalRecebido">R$ 0,00</strong>
+      </div>
+      <div class="caixa">
+        <small>A receber (fiado)</small>
+        <strong id="totalFiado">R$ 0,00</strong>
+      </div>
+    </section>
+
+    <div class="colunas">
+
+      <!-- Coluna da esquerda: nova venda e produtos -->
+      <div>
+
+      <!-- Formulário de nova venda -->
+      <section class="caixa">
+        <h2>Nova venda</h2>
+
+        <form id="formVenda" autocomplete="off">
+          <label for="produtoSelect">O que você vendeu?</label>
+          <!-- O JavaScript enche esta lista com os produtos cadastrados -->
+          <select id="produtoSelect"></select>
+          <!-- Só aparece quando escolhe "Outro produto" -->
+          <input type="text" id="produto" placeholder="Nome do produto" style="display:none; margin-top:6px;">
+
+          <label for="categoria">Tipo</label>
+          <!-- As opções são colocadas pelo JavaScript (lista CATEGORIAS) -->
+          <select id="categoria"></select>
+
+          <div class="linha">
+            <div>
+              <label for="quantidade">Quantidade</label>
+              <input type="number" id="quantidade" value="1" min="1" step="1" required>
+            </div>
+            <div>
+              <label for="valor">Preço de cada (R$)</label>
+              <input type="number" id="valor" min="0" step="0.01" placeholder="0,00" required>
+            </div>
+          </div>
+
+          <label for="pagamento">Como pagou?</label>
+          <select id="pagamento">
+            <option>Dinheiro</option>
+            <option>Pix</option>
+            <option>Fiado</option>
+          </select>
+
+          <div class="previa">Total desta venda: <strong id="previa">R$ 0,00</strong></div>
+
+          <button type="submit" class="botao-salvar">Salvar venda</button>
+          <div class="mensagem" id="mensagem"></div>
+        </form>
+      </section>
+
+      <!-- Cadastro de produtos -->
+      <section class="caixa espaco">
+        <h2>Meus produtos</h2>
+
+        <form id="formProduto" autocomplete="off">
+          <label for="prodNome">Nome do produto</label>
+          <input type="text" id="prodNome" placeholder="Ex.: brigadeiro">
+
+          <div class="linha">
+            <div>
+              <label for="prodCategoria">Tipo</label>
+              <select id="prodCategoria"></select>
+            </div>
+            <div>
+              <label for="prodValor">Preço (R$)</label>
+              <input type="number" id="prodValor" min="0" step="0.01" placeholder="0,00">
+            </div>
+          </div>
+
+          <button type="submit" class="botao-cadastrar">Cadastrar produto</button>
+          <div class="mensagem" id="prodMensagem"></div>
+        </form>
+
+        <ul class="lista-produtos" id="listaMeusProdutos"></ul>
+      </section>
+
+      </div>
+
+      <!-- Lista de vendas -->
+      <section class="caixa">
+        <div class="topo-lista">
+          <h2 style="margin:0">Vendas do dia</h2>
+          <div>
+            <label for="dataEscolhida" style="display:inline; margin-right:6px;">Dia:</label>
+            <input type="date" id="dataEscolhida">
+          </div>
+        </div>
+
+        <div class="rolagem">
+          <table>
+            <thead>
+              <tr>
+                <th>Hora</th>
+                <th>Produto</th>
+                <th class="num">Qtd</th>
+                <th class="num">Total</th>
+                <th>Pagamento</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="corpoTabela"></tbody>
+          </table>
+        </div>
+        <div class="vazio" id="avisoVazio">Nenhuma venda neste dia ainda. Anote a primeira ao lado.</div>
+
+        <div class="por-categoria">
+          <h2>Quanto vendeu de cada tipo</h2>
+          <ul id="listaCategorias"></ul>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer>
+    Caderno de Vendas · APIExt II · Uninorte<br>
+    Os dados ficam salvos só neste navegador, neste aparelho.
+  </footer>
+
+  <script>
+    // ============================================================
+    // CADERNO DE VENDAS
+    // Os registros são guardados no localStorage do navegador.
+    // Cada venda é um objeto dentro de uma lista (array).
+    // ============================================================
+
+    var CHAVE = "caderno_vendas";   // nome com que a lista fica guardada
+    var vendas = [];                // lista com todas as vendas
+
+    // ---------- pegando os elementos da página ----------
+    var formVenda = document.getElementById("formVenda");
+    var campoProduto = document.getElementById("produto");
+    var campoCategoria = document.getElementById("categoria");
+    var campoQuantidade = document.getElementById("quantidade");
+    var campoValor = document.getElementById("valor");
+    var campoPagamento = document.getElementById("pagamento");
+    var campoData = document.getElementById("dataEscolhida");
+    var textoPrevia = document.getElementById("previa");
+    var textoMensagem = document.getElementById("mensagem");
+    var corpoTabela = document.getElementById("corpoTabela");
+    var avisoVazio = document.getElementById("avisoVazio");
+    var listaCategorias = document.getElementById("listaCategorias");
+    var campoProdutoSelect = document.getElementById("produtoSelect");
+    var formProduto = document.getElementById("formProduto");
+    var campoProdNome = document.getElementById("prodNome");
+    var campoProdCategoria = document.getElementById("prodCategoria");
+    var campoProdValor = document.getElementById("prodValor");
+    var textoProdMensagem = document.getElementById("prodMensagem");
+    var listaMeusProdutos = document.getElementById("listaMeusProdutos");
+
+    // Tipos de produto (aparecem nos dois campos "Tipo")
+    var CATEGORIAS = ["Doce", "Salgado", "Unha", "Artesanato", "Revenda", "Outro"];
+
+    var CHAVE_PRODUTOS = "caderno_produtos";  // onde os produtos ficam guardados
+    var produtos = [];                        // lista dos produtos cadastrados
+
+
+    // ---------- funções de apoio ----------
+
+    // Mostra um número como dinheiro: 12.5 vira "R$ 12,50"
+    function formatarDinheiro(numero) {
+      return numero.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    }
+
+    // Devolve a data de hoje no formato AAAA-MM-DD (o mesmo do campo de data)
+    function dataDeHoje() {
+      var agora = new Date();
+      var ano = agora.getFullYear();
+      var mes = String(agora.getMonth() + 1).padStart(2, "0");
+      var dia = String(agora.getDate()).padStart(2, "0");
+      return ano + "-" + mes + "-" + dia;
+    }
+
+    // Devolve a hora de agora no formato HH:MM
+    function horaDeAgora() {
+      var agora = new Date();
+      var h = String(agora.getHours()).padStart(2, "0");
+      var m = String(agora.getMinutes()).padStart(2, "0");
+      return h + ":" + m;
+    }
+
+    // Evita que o que a pessoa digitou quebre o HTML da tabela
+    function limparTexto(texto) {
+      var div = document.createElement("div");
+      div.textContent = texto;
+      return div.innerHTML;
+    }
+
+    function mostrarMensagem(texto, ehErro) {
+      textoMensagem.textContent = texto;
+      textoMensagem.className = ehErro ? "mensagem erro" : "mensagem";
+    }
+
+
+    // ---------- guardar e carregar (o "banco de dados") ----------
+
+    function salvarVendas() {
+      try {
+        localStorage.setItem(CHAVE, JSON.stringify(vendas));
+      } catch (erro) {
+        mostrarMensagem("Não consegui salvar. O navegador pode estar bloqueando.", true);
+      }
+    }
+
+    function carregarVendas() {
+      try {
+        var guardado = localStorage.getItem(CHAVE);
+        if (guardado) {
+          vendas = JSON.parse(guardado);
+        }
+      } catch (erro) {
+        vendas = [];
+      }
+    }
+
+
+    function salvarProdutos() {
+      try {
+        localStorage.setItem(CHAVE_PRODUTOS, JSON.stringify(produtos));
+      } catch (erro) {
+        mostrarMensagemProduto("Não consegui salvar o produto.", true);
+      }
+    }
+
+    function carregarProdutos() {
+      try {
+        var guardado = localStorage.getItem(CHAVE_PRODUTOS);
+        if (guardado) {
+          produtos = JSON.parse(guardado);
+        }
+      } catch (erro) {
+        produtos = [];
+      }
+    }
+
+    function mostrarMensagemProduto(texto, ehErro) {
+      textoProdMensagem.textContent = texto;
+      textoProdMensagem.className = ehErro ? "mensagem erro" : "mensagem";
+    }
+
+    // Coloca as opções de tipo nos dois campos
+    function preencherCategorias() {
+      var campos = [campoCategoria, campoProdCategoria];
+      for (var i = 0; i < campos.length; i++) {
+        for (var j = 0; j < CATEGORIAS.length; j++) {
+          var opcao = document.createElement("option");
+          opcao.textContent = CATEGORIAS[j];
+          campos[i].appendChild(opcao);
+        }
+      }
+    }
+
+
+    // ---------- cálculos ----------
+
+    // Pega só as vendas do dia que está escolhido no calendário
+    function vendasDoDia() {
+      var dia = campoData.value;
+      return vendas.filter(function (v) {
+        return v.data === dia;
+      });
+    }
+
+    // Parte que soma o total do dia
+    function calcularTotais(lista) {
+      var total = 0;
+      var recebido = 0;
+      var fiado = 0;
+
+      for (var i = 0; i < lista.length; i++) {
+        var valorDaVenda = lista[i].quantidade * lista[i].valor;
+        total = total + valorDaVenda;
+
+        if (lista[i].pagamento === "Fiado") {
+          fiado = fiado + valorDaVenda;
+        } else {
+          recebido = recebido + valorDaVenda;
+        }
+      }
+
+      return { total: total, recebido: recebido, fiado: fiado };
+    }
+
+
+    // ---------- desenhar na tela ----------
+
+    function atualizarTela() {
+      var lista = vendasDoDia();
+      var totais = calcularTotais(lista);
+
+      // totais lá de cima
+      document.getElementById("totalDia").textContent = formatarDinheiro(totais.total);
+      document.getElementById("totalRecebido").textContent = formatarDinheiro(totais.recebido);
+      document.getElementById("totalFiado").textContent = formatarDinheiro(totais.fiado);
+
+      // tabela (a mais recente primeiro)
+      corpoTabela.innerHTML = "";
+      avisoVazio.style.display = lista.length === 0 ? "block" : "none";
+
+      for (var i = lista.length - 1; i >= 0; i--) {
+        var v = lista[i];
+        var totalVenda = v.quantidade * v.valor;
+        var ehFiado = v.pagamento === "Fiado";
+
+        var linha = document.createElement("tr");
+        linha.innerHTML =
+          "<td>" + v.hora + "</td>" +
+          "<td>" + limparTexto(v.produto) + "<br><span class='etiqueta'>" + v.categoria + "</span></td>" +
+          "<td class='num'>" + v.quantidade + " x " + formatarDinheiro(v.valor) + "</td>" +
+          "<td class='num'><strong>" + formatarDinheiro(totalVenda) + "</strong></td>" +
+          "<td><span class='etiqueta " + (ehFiado ? "fiado" : "") + "'>" + v.pagamento + "</span></td>" +
+          "<td class='num'>" +
+            (ehFiado ? "<button class='mini' data-acao='receber' data-id='" + v.id + "'>Recebi</button>" : "") +
+            "<button class='mini apagar' data-acao='apagar' data-id='" + v.id + "'>Apagar</button>" +
+          "</td>";
+        corpoTabela.appendChild(linha);
+      }
+
+      desenharCategorias(lista);
+    }
+
+    // Soma por tipo de produto (Doce, Salgado...)
+    function desenharCategorias(lista) {
+      var somas = {};
+      for (var i = 0; i < lista.length; i++) {
+        var cat = lista[i].categoria;
+        if (!somas[cat]) { somas[cat] = 0; }
+        somas[cat] = somas[cat] + lista[i].quantidade * lista[i].valor;
+      }
+
+      listaCategorias.innerHTML = "";
+      var nomes = Object.keys(somas);
+
+      if (nomes.length === 0) {
+        listaCategorias.innerHTML = "<li><span>Sem vendas neste dia</span></li>";
+        return;
+      }
+
+      for (var j = 0; j < nomes.length; j++) {
+        var item = document.createElement("li");
+        item.innerHTML = "<span>" + nomes[j] + "</span><strong>" + formatarDinheiro(somas[nomes[j]]) + "</strong>";
+        listaCategorias.appendChild(item);
+      }
+    }
+
+    // Procura um produto cadastrado pelo id
+    function acharProduto(id) {
+      for (var i = 0; i < produtos.length; i++) {
+        if (produtos[i].id === id) {
+          return produtos[i];
+        }
+      }
+      return null;
+    }
+
+    // Desenha a lista de escolha (na venda) e a lista "Meus produtos"
+    function desenharProdutos() {
+      var escolhidoAntes = campoProdutoSelect.value;
+
+      // lista de escolha da venda
+      campoProdutoSelect.innerHTML = "";
+      for (var i = 0; i < produtos.length; i++) {
+        var opcao = document.createElement("option");
+        opcao.value = produtos[i].id;
+        opcao.textContent = produtos[i].nome + " (" + formatarDinheiro(produtos[i].valor) + ")";
+        campoProdutoSelect.appendChild(opcao);
+      }
+      var outro = document.createElement("option");
+      outro.value = "outro";
+      outro.textContent = "Outro produto (digitar)";
+      campoProdutoSelect.appendChild(outro);
+
+      // mantém a escolha de antes, se ela ainda existir
+      if (escolhidoAntes && campoProdutoSelect.querySelector("option[value='" + escolhidoAntes + "']")) {
+        campoProdutoSelect.value = escolhidoAntes;
+      }
+
+      // lista "Meus produtos"
+      listaMeusProdutos.innerHTML = "";
+      if (produtos.length === 0) {
+        listaMeusProdutos.innerHTML = "<li><span>Nenhum produto cadastrado ainda.</span></li>";
+      }
+      for (var j = 0; j < produtos.length; j++) {
+        var p = produtos[j];
+        var item = document.createElement("li");
+        item.innerHTML =
+          "<span>" + limparTexto(p.nome) + "<small>" + p.categoria + " · " + formatarDinheiro(p.valor) + "</small></span>" +
+          "<span>" +
+            "<button class='mini' data-acao='preco' data-id='" + p.id + "'>Mudar preço</button>" +
+            "<button class='mini apagar' data-acao='tirar' data-id='" + p.id + "'>Apagar</button>" +
+          "</span>";
+        listaMeusProdutos.appendChild(item);
+      }
+
+      aoEscolherProduto();
+    }
+
+    // Quando escolhe um produto, o tipo e o preço já aparecem
+    function aoEscolherProduto() {
+      if (campoProdutoSelect.value === "outro") {
+        campoProduto.style.display = "block";   // mostra o campo para digitar
+        return;
+      }
+
+      campoProduto.style.display = "none";
+      var p = acharProduto(Number(campoProdutoSelect.value));
+      if (p) {
+        campoCategoria.value = p.categoria;
+        campoValor.value = p.valor;
+      }
+      atualizarPrevia();
+    }
+
+    // Devolve o nome do produto da venda (escolhido ou digitado)
+    function pegarNomeDoProduto() {
+      if (campoProdutoSelect.value === "outro") {
+        return campoProduto.value.trim();
+      }
+      var p = acharProduto(Number(campoProdutoSelect.value));
+      return p ? p.nome : "";
+    }
+
+    // Mostra quanto vai dar a venda enquanto a pessoa digita
+    function atualizarPrevia() {
+      var qtd = Number(campoQuantidade.value) || 0;
+      var valor = Number(campoValor.value) || 0;
+      textoPrevia.textContent = formatarDinheiro(qtd * valor);
+    }
+
+
+    // ---------- ações do usuário ----------
+
+    // Quando clica em "Salvar venda"
+    formVenda.addEventListener("submit", function (evento) {
+      evento.preventDefault();  // não deixa a página recarregar
+
+      var produto = pegarNomeDoProduto();
+      var quantidade = parseInt(campoQuantidade.value, 10);
+      var valor = parseFloat(campoValor.value);
+
+      if (produto === "") {
+        mostrarMensagem("Escreva o que você vendeu.", true);
+        return;
+      }
+      if (isNaN(quantidade) || quantidade < 1) {
+        mostrarMensagem("A quantidade tem que ser pelo menos 1.", true);
+        return;
+      }
+      if (isNaN(valor) || valor < 0) {
+        mostrarMensagem("Coloque o preço de cada unidade.", true);
+        return;
+      }
+
+      var novaVenda = {
+        id: Date.now(),                  // número único para achar a venda depois
+        data: dataDeHoje(),
+        hora: horaDeAgora(),
+        produto: produto,
+        categoria: campoCategoria.value,
+        quantidade: quantidade,
+        valor: valor,
+        pagamento: campoPagamento.value
+      };
+
+      vendas.push(novaVenda);
+      salvarVendas();
+
+      // volta a mostrar o dia de hoje para a venda aparecer na lista
+      campoData.value = dataDeHoje();
+      atualizarTela();
+
+      mostrarMensagem("Venda salva: " + produto + " (" + formatarDinheiro(quantidade * valor) + ")", false);
+
+      // prepara para a próxima venda (produto cadastrado continua escolhido)
+      campoQuantidade.value = 1;
+      if (campoProdutoSelect.value === "outro") {
+        campoProduto.value = "";
+        campoValor.value = "";
+        campoProduto.focus();
+      } else {
+        campoQuantidade.focus();
+      }
+      atualizarPrevia();
+    });
+
+    // Quando clica em "Cadastrar produto"
+    formProduto.addEventListener("submit", function (evento) {
+      evento.preventDefault();
+
+      var nome = campoProdNome.value.trim();
+      var valor = parseFloat(campoProdValor.value);
+
+      if (nome === "") {
+        mostrarMensagemProduto("Escreva o nome do produto.", true);
+        return;
+      }
+      if (isNaN(valor) || valor < 0) {
+        mostrarMensagemProduto("Coloque o preço do produto.", true);
+        return;
+      }
+      for (var i = 0; i < produtos.length; i++) {
+        if (produtos[i].nome.toLowerCase() === nome.toLowerCase()) {
+          mostrarMensagemProduto("Esse produto já está cadastrado.", true);
+          return;
+        }
+      }
+
+      var novoProduto = {
+        id: Date.now(),
+        nome: nome,
+        categoria: campoProdCategoria.value,
+        valor: valor
+      };
+
+      produtos.push(novoProduto);
+      salvarProdutos();
+      desenharProdutos();
+
+      // já deixa o produto novo escolhido na venda
+      campoProdutoSelect.value = novoProduto.id;
+      aoEscolherProduto();
+
+      mostrarMensagemProduto("Produto cadastrado: " + nome, false);
+      campoProdNome.value = "";
+      campoProdValor.value = "";
+      campoProdNome.focus();
+    });
+
+    // Botões "Mudar preço" e "Apagar" da lista de produtos
+    listaMeusProdutos.addEventListener("click", function (evento) {
+      var botao = evento.target;
+      var acao = botao.getAttribute("data-acao");
+      var id = Number(botao.getAttribute("data-id"));
+
+      if (!acao) { return; }
+
+      if (acao === "tirar") {
+        if (!confirm("Apagar este produto da lista? As vendas já feitas continuam salvas.")) { return; }
+        produtos = produtos.filter(function (p) { return p.id !== id; });
+      }
+
+      if (acao === "preco") {
+        var p = acharProduto(id);
+        var resposta = prompt("Novo preço de " + p.nome + " (R$):", p.valor);
+        if (resposta === null) { return; }
+        var novoValor = parseFloat(String(resposta).replace(",", "."));
+        if (isNaN(novoValor) || novoValor < 0) {
+          mostrarMensagemProduto("Preço inválido.", true);
+          return;
+        }
+        p.valor = novoValor;
+      }
+
+      salvarProdutos();
+      desenharProdutos();
+    });
+
+    // Botões "Recebi" e "Apagar" dentro da tabela
+    corpoTabela.addEventListener("click", function (evento) {
+      var botao = evento.target;
+      var acao = botao.getAttribute("data-acao");
+      var id = Number(botao.getAttribute("data-id"));
+
+      if (!acao) { return; }
+
+      if (acao === "apagar") {
+        if (!confirm("Apagar esta venda?")) { return; }
+        vendas = vendas.filter(function (v) { return v.id !== id; });
+      }
+
+      if (acao === "receber") {
+        for (var i = 0; i < vendas.length; i++) {
+          if (vendas[i].id === id) {
+            vendas[i].pagamento = "Dinheiro";  // o fiado foi pago
+          }
+        }
+      }
+
+      salvarVendas();
+      atualizarTela();
+    });
+
+    // Atualiza a prévia e a tela quando mexe nos campos
+    campoQuantidade.addEventListener("input", atualizarPrevia);
+    campoValor.addEventListener("input", atualizarPrevia);
+    campoData.addEventListener("change", atualizarTela);
+    campoProdutoSelect.addEventListener("change", aoEscolherProduto);
+
+
+    // ---------- começo do programa ----------
+    preencherCategorias();
+    carregarVendas();
+    carregarProdutos();
+    campoData.value = dataDeHoje();
+    desenharProdutos();
+    atualizarPrevia();
+    atualizarTela();
+  </script>
+
+</body>
+</html>
